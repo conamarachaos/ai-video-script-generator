@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Video Script Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        .message-content {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        /* Message animations */
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+        
+        .message-animate {
+            animation: slideInUp 0.4s ease-out;
+        }
+        
+        .message-bubble {
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        .new-message-indicator {
+            animation: pulse 0.6s ease-out;
+        }
+        .typing-indicator {
+            display: inline-block;
+        }
+        .typing-indicator span {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #94a3b8;
+            animation: typing 1.4s infinite;
+        }
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+            }
+            30% {
+                transform: translateY(-10px);
+            }
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+        .option-btn {
+            border: 1px solid transparent;
+            transition: all 0.2s;
+        }
+        .option-btn:hover {
+            border-color: #8b5cf6;
+            transform: translateX(2px);
+        }
+        .option-btn:disabled {
+            cursor: not-allowed;
+        }
+        
+        /* Smooth transitions */
+        .message-wrapper {
+            transition: all 0.3s ease;
+        }
+        
+        /* Glow effect for new messages */
+        @keyframes glow {
+            0% {
+                box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(139, 92, 246, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(139, 92, 246, 0);
+            }
+        }
+        
+        .new-message-glow {
+            animation: glow 1s ease-out;
+        }
+    </style>
+</head>
+<body class="h-full bg-slate-950 text-slate-100">
+    <div class="flex h-full">
+        <!-- Sidebar -->
+        <div class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col">
+            <!-- New Chat Button -->
+            <div class="p-4">
+                <button id="newChatBtn" class="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 transition-colors rounded-lg px-4 py-3 text-sm font-medium">
+                    <i class="fas fa-plus"></i>
+                    New Chat
+                </button>
+            </div>
+            
+            <!-- Conversations List -->
+            <div class="flex-1 overflow-y-auto px-4 pb-4">
+                <div id="conversationsList" class="space-y-2">
+                    <!-- Conversations will be loaded here -->
+                </div>
+            </div>
+            
+            <!-- User Section -->
+            <div class="border-t border-slate-800 p-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-gradient-to-br from-violet-500 to-purple-600 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-xs"></i>
+                    </div>
+                    <span class="text-sm">Video Script AI</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Chat Area -->
+        <div class="flex-1 flex flex-col">
+            <!-- Header -->
+            <div class="border-b border-slate-800 px-6 py-4">
+                <h1 class="text-lg font-semibold">AI Video Script Generator</h1>
+            </div>
+            
+            <!-- Messages Area -->
+            <div id="messagesContainer" class="flex-1 overflow-y-auto px-6 py-6">
+                <div id="messagesList" class="max-w-3xl mx-auto space-y-6">
+                    <!-- Welcome Message -->
+                    <div class="text-center py-12">
+                        <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl mb-4">
+                            <i class="fas fa-video text-2xl"></i>
+                        </div>
+                        <h2 class="text-2xl font-semibold mb-2">Welcome to AI Video Script Generator</h2>
+                        <p class="text-slate-400">Start a conversation to generate professional video scripts</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Input Area -->
+            <div class="border-t border-slate-800 px-6 py-4">
+                <div class="max-w-3xl mx-auto">
+                    <div class="relative">
+                        <textarea 
+                            id="messageInput" 
+                            placeholder="Describe your video script needs..."
+                            class="w-full bg-slate-800 rounded-xl px-4 py-3 pr-12 resize-none focus:outline-none focus:ring-2 focus:ring-violet-500 placeholder-slate-400"
+                            rows="3"
+                        ></textarea>
+                        <button 
+                            id="sendBtn"
+                            class="absolute bottom-3 right-3 w-8 h-8 bg-violet-600 hover:bg-violet-500 rounded-lg flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <i class="fas fa-paper-plane text-sm"></i>
+                        </button>
+                    </div>
+                    <div class="mt-2 text-xs text-slate-500 text-center">
+                        Powered by AI Video Script Generator
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Unified version with all fixes -->
+    <script src="/static/js/app_unified.js"></script>
+</body>
+</html>
